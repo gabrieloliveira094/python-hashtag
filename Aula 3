@@ -1,0 +1,24 @@
+from selenium import webdriver
+
+navegador = webdriver.Chrome()
+
+import pandas as pd
+
+tabela = pd.read_excel("commodities.xlsx")
+
+import unicodedata
+
+for linha in tabela.index:
+  produto = tabela.loc[linha, "Produto"]
+  link = f"https://www.melhorcambio.com/{produto}-hoje"
+  link = unicodedata.normalize("NFKD",link).encode("ascii","ignore")
+  navegador.get(link)
+  cotacao = navegador.find_element('xpath', '//*[@id="comercial"]').get_attribute('value')
+  cotacao = cotacao.replace("." , "").replace("," , ".")
+  cotacao = float(cotacao)
+
+  tabela.loc[0, "Preço Atual"] = cotacao
+  
+tabela["Comprar"] = tabela["Preço Atual"] < tabela["Preço Ideal"]  
+navegador.quit()
+tabela.to_excel("commodities_atualizado.xlsx",index=False)
